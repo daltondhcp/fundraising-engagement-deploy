@@ -40,3 +40,4 @@ The Virtual Network size need to be at least /26 with the following subnets in p
 ![VNet Creation](./media/vnet_creation.png)
 
 ### Post-deployment configuration using PowerShell script
+
