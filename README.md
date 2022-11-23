@@ -71,7 +71,6 @@ The PowerShell script will configure/create the following components. Naming wil
 
     ```bash
     wget https://raw.githubusercontent.com/daltondhcp/fundraising-engagement-deploy/main/scripts/securePostConfig.ps1
-    wget https://gist.githubusercontent.com/daltondhcp/d05809971fb59da2472cb3c63d4fa49c/raw/ee87fbb2e1f34664e7f213ee23db999b53bc12b1/setup-webhook.sh
     ```
 
     ![VNet Creation](./media/download_scripts.png)
