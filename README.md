@@ -5,8 +5,8 @@ This means there are strict security requirements in areas like network flows th
 
 > **Note:** Microsoft doesn't provide guidance on compliance review of the solution nor the validation of solution for PCI DSS.
 
-The purpose of this article is to describe the required network patterns as well as how to further enhance network security in Fundraising and Engagement deployments by enabling private connectivity.
-For general information about Fundraising and Engagement, refer to [Overview of deploying Fundraising and Engagement](https://learn.microsoft.com/en-us/dynamics365/industry/nonprofit/fundraising-engagement-deploy-overview) at Microsoft Learn.
+The purpose of this article is to describe the required network patterns as well as how to further enhance network security in Fundraising and Engagement deployments by enabling private connectivity. For
+For general post-deployment considerations related to monitoring and data plane security, refer to [Fundraising and Engagement - Post-deployment considerations](https://learn.microsoft.com/en-us/dynamics365/industry/nonprofit/fundraising-engagement-deploy-overview#post-deployment-considerations) at Microsoft Learn.
 
 ## Solution overview – network flows
 
@@ -18,7 +18,6 @@ In terms of inbound network flows, the Background Service/Payment Services funct
 ## Post-deployment configuration
 
 For a semi-automated deployment method, follow the [Post-deployment configuration using PowerShell script]() instructions.
-If you prefer doing it manually using the portal, follow the instructions for [manual configuration]().
 
 After reconfiguring/securing the Azure resources, you need to reconfigure the Dynamics background service URI as well as the webhook for the payment service.
 
@@ -45,22 +44,57 @@ The PowerShell script will configure/create the following components. Naming wil
 
 * Validate Inputs
 * Private DNS Zones for App Services/Functions, Key Vaults and SQL Server. The zones will be created in the solution resource group and linked to the VNet.
-    * privatelink.database.windows.net
-    * privatelink.vaultcore.azure.net
-    * privatelink.azurewebsites.net
-    > Note: *If you have centralized private DNS in your Azure Environment, you may need to change/remove this part from the script.*
+  * privatelink.database.windows.net
+  * privatelink.vaultcore.azure.net
+  * privatelink.azurewebsites.net
+    > Note: *If you have centralized Private DNS in your Azure Environment, you may need to change/remove this part from the script.*
 
     <https://learn.microsoft.com/en-us/azure/dns/private-dns-getstarted-portal>
     <https://learn.microsoft.com/en-us/azure/private-link/private-endpoint-dns>
 * Private Endpoints for Key Vaults, Functions and SQL Database
 * Outbound VNet Integration of App Services/Functions
 * Deployment of Azure Front Door
-    * Create endpoint for Payment and Background service
-    * Create origin for Payment and Background service
+  * Create endpoint for Payment and Background service
+  * Create origin for Payment and Background service
 * Disable Azure Key Vault public access
---- 
-#### Execute deployment 
-1. In Azure Cloud Shell, switch to PowerShell and run below command to download configuration script:
+
+---
+
+#### Execute deployment
+
+1. In Azure Cloud Shell, switch to PowerShell and run below command to download configuration scripts:
+
     ```bash
-    wget https://raw.githubusercontent.com/daltondhcp/fundraising-engagement-deploy/instructions/scripts/securePostConfig.ps1
+    wget https://raw.githubusercontent.com/daltondhcp/fundraising-engagement-deploy/main/scripts/securePostConfig.ps1
+    wget https://gist.githubusercontent.com/daltondhcp/d05809971fb59da2472cb3c63d4fa49c/raw/ee87fbb2e1f34664e7f213ee23db999b53bc12b1/setup-webhook.sh
     ```
+
+    ![VNet Creation](./media/download_scripts.png)
+2. Execute the PowerShell configuration script as below. Ensure to change the parameters to reflect your resource group names, subscription id and subnet names from the virtual network.
+
+   ```powershell
+   ./securePostConfig.ps1 -SubscriptionId afffa704-8cbd-46f2-a146-b473f632ecb5 `
+                          -ResourceGroupName fundraising-test `
+                          -peSubnetName private-endpoints `
+                          -appSubnetName app-services `
+                          -Environment test
+   ```
+
+    ![VNet Creation](./media/deployScript.png)
+
+    The script takes around 10-15 minutes to execute.
+
+    After successful execution, copy the Front Door endpoint URIs returned, they are needed in the subsequent steps.
+    ![VNet Creation](./media/deploy_output.png)
+
+3. Follow the instructions [here](https://learn.microsoft.com/en-us/dynamics365/industry/nonprofit/fundraising-engagement-deploy-manually#configuration-record-prerequisites) and update the Background services URI to the `*.z01.azurefd.net` endpoint from the previous step.
+
+4. Follow the steps [here](https://learn.microsoft.com/en-us/dynamics365/industry/nonprofit/fundraising-engagement-deploy-manually#configure-payment-service-webhook-from-azure) to update the payment webhook URI to the `*.z01.azurefd.net` from step 2. Use the customized script/command line below instead of step 4 from Microsoft Learn.
+
+   ```bash
+   wget https://raw.githubusercontent.com/daltondhcp/fundraising-engagement-deploy/main/scripts/setup-webhook-afd.sh
+
+   # Replace parameters to reflect values in the actual environment
+   bash ./setup-webhook-afd.sh --group <RESOURCE_GROUP>  --url '<Dynamics_URL>' --afd-name *.z01.azurefd.net --function-name Payment-Service-test
+
+               ```

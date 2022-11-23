@@ -30,6 +30,11 @@ begin {
     }
     # Get subnet and add delegation
     $virtualNetworkSubnets = Get-AzVirtualNetworkSubnetConfig -VirtualNetwork $virtualNetwork
+    $peSubnetName,$appSubnetName | ForEach-Object -Process {
+        if ($virtualNetworkSubnets.Name -notcontains $_) {
+            throw "Subnet $_ not found in Virtual Network"
+        }
+    }
     $appSubnet = Get-AzVirtualNetworkSubnetConfig -VirtualNetwork $virtualNetwork -Name $appSubnetName
     $appSubnet = Add-AzDelegation -Name 'appSvcDelegation' -ServiceName 'Microsoft.Web/serverFarms' -Subnet $appSubnet
     Write-Output "Adding subnet delegation for app services"
@@ -111,7 +116,7 @@ process {
     # Create endpoints for Payment and Background Service
     'payment', 'background' | ForEach-Object -Process {
         $serviceName = $_
-        Write-Output "Creating Azure Front Door Origin for $service"
+        Write-Output "Creating Azure Front Door Origin for $serviceName"
         $App = Get-AzWebApp -ResourceGroupName $ResourceGroupName | Where-Object { $_.Name -like "*$serviceName*" }
         $AppPe = Get-AzResource -ResourceGroupName $resourcegroupname -ResourceType "Microsoft.Network/privateEndpoints" | Where-Object { $_.Name -like "*$serviceName*" }
         $Endpoint = New-AzFrontDoorCdnEndpoint -EndpointName "$($namingPrefix)-$serviceName-$($Environment)" -ProfileName "$($namingPrefix)-afd-$($Environment)" -ResourceGroupName $ResourceGroupName -Location Global
