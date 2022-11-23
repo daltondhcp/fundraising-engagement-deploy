@@ -13,11 +13,14 @@ For general post-deployment considerations related to monitoring and data plane 
 An overview of the individual Azure Components created for Fundraising and Engagement can be found [here](https://learn.microsoft.com/en-us/dynamics365/industry/nonprofit/fundraising-engagement-deploy-overview#overview-of-azure-components-used-by-fundraising--engagement).
 
 In terms of inbound network flows, the Background Service/Payment Services function needs to be accessed directly from Dynamics 365/Power Platform. As it is currently not possible to connect from Power Platform to a private virtual network, the functions need to be exposed with public endpoints. The backend components (Key Vault, Storage, SQL database) only need to be accessed through the functions/Web Job and require no public endpoints.
+
 ![Import-Git](./media/overview.png)
 
 ## Post-deployment configuration
 
-For a semi-automated deployment method, follow the [Post-deployment configuration using PowerShell script]() instructions.
+For a semi-automated deployment of the below architecture, follow the [Post-deployment configuration using PowerShell script](#post-deployment-azure-configuration-using-powershell-script) instructions.
+
+![Import-Git](./media/solution_overview.png)
 
 After reconfiguring/securing the Azure resources, you need to reconfigure the Dynamics background service URI as well as the webhook for the payment service.
 
@@ -35,6 +38,8 @@ The Virtual Network size need to be at least /26 with the following subnets in p
 | --- | --- | --- |
 | private-endpoints | /28 | Private endpoints will be attached to this subnet|
 | app-services | /28 | [App services VNet integration](https://learn.microsoft.com/en-us/azure/app-service/overview-vnet-integration#subnet-requirements)|
+
+> Note: If you configure [User Defined Routes](https://learn.microsoft.com/en-us/azure/virtual-network/virtual-networks-udr-overview#user-defined) and route traffic to a central firewall from the subnets, additional configuration may be required to make the solution work.
 
 ![VNet Creation](./media/vnet_creation.png)
 
@@ -85,16 +90,17 @@ The PowerShell script will configure/create the following components. Naming wil
     The script takes around 10-15 minutes to execute.
 
     After successful execution, copy the Front Door endpoint URIs returned, they are needed in the subsequent steps.
+
     ![VNet Creation](./media/deploy_output.png)
 
 3. Follow the instructions [here](https://learn.microsoft.com/en-us/dynamics365/industry/nonprofit/fundraising-engagement-deploy-manually#configuration-record-prerequisites) and update the Background services URI to the `*.z01.azurefd.net` endpoint from the previous step.
 
 4. Follow the steps [here](https://learn.microsoft.com/en-us/dynamics365/industry/nonprofit/fundraising-engagement-deploy-manually#configure-payment-service-webhook-from-azure) to update the payment webhook URI to the `*.z01.azurefd.net` from step 2. Use the customized script/command line below instead of step 4 from Microsoft Learn.
 
-   ```bash
-   wget https://raw.githubusercontent.com/daltondhcp/fundraising-engagement-deploy/main/scripts/setup-webhook-afd.sh
+    ```bash
+    wget https://raw.githubusercontent.com/daltondhcp/fundraising-engagement-deploy/main/scripts/setup-webhook-afd.sh
 
-   # Replace parameters to reflect values in the actual environment
-   bash ./setup-webhook-afd.sh --group <RESOURCE_GROUP>  --url '<Dynamics_URL>' --afd-name *.z01.azurefd.net --function-name Payment-Service-test
+    # Replace parameters to reflect values in the actual environment
+    bash ./setup-webhook-afd.sh --group <RESOURCE_GROUP>  --url '<Dynamics_URL>' --afd-name *.z01.azurefd.net --function-name Payment-Service-test
 
-               ```
+    ```
