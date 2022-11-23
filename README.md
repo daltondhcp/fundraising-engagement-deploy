@@ -39,5 +39,28 @@ The Virtual Network size need to be at least /26 with the following subnets in p
 
 ![VNet Creation](./media/vnet_creation.png)
 
-### Post-deployment configuration using PowerShell script
+### Post-deployment Azure configuration using PowerShell script
 
+The PowerShell script will configure/create the following components. Naming will be based on the prefix used when deploying the F&E solution.
+
+* Validate Inputs
+* Private DNS Zones for App Services/Functions, Key Vaults and SQL Server. The zones will be created in the solution resource group and linked to the VNet.
+    * privatelink.database.windows.net
+    * privatelink.vaultcore.azure.net
+    * privatelink.azurewebsites.net
+    > Note: *If you have centralized private DNS in your Azure Environment, you may need to change/remove this part from the script.*
+
+    <https://learn.microsoft.com/en-us/azure/dns/private-dns-getstarted-portal>
+    <https://learn.microsoft.com/en-us/azure/private-link/private-endpoint-dns>
+* Private Endpoints for Key Vaults, Functions and SQL Database
+* Outbound VNet Integration of App Services/Functions
+* Deployment of Azure Front Door
+    * Create endpoint for Payment and Background service
+    * Create origin for Payment and Background service
+* Disable Azure Key Vault public access
+--- 
+#### Execute deployment 
+1. In Azure Cloud Shell, switch to PowerShell and run below command to download configuration script:
+    ```bash
+    wget https://raw.githubusercontent.com/daltondhcp/fundraising-engagement-deploy/instructions/scripts/securePostConfig.ps1
+    ```
